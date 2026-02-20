@@ -14,7 +14,7 @@ COPY requirements.txt ./
 RUN python -m pip install --upgrade pip setuptools wheel \
  && pip wheel --no-cache-dir --no-deps --wheel-dir /wheels -r requirements.txt
 
-FROM python:3.11-slim
+FROM pytorch/pytorch:2.2.0-cpu
 ENV PYTHONUNBUFFERED=1
 WORKDIR /app
 
