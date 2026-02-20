@@ -8,10 +8,13 @@ app = Flask(__name__)
 @app.route('/chatbot/webhook/', methods=['POST'])
 def webhook():
     data = request.get_json(silent=True) or {}
+    print(f"Received data: {data}")
     payload = data.get("payload", {}) or {}
+    print(f"Payload: {payload}")
 
     chat_id = payload.get("from")
     received_message = payload.get("body", "")
+    print(f"chat_id: {chat_id}, received_message: {received_message}")
     is_group = isinstance(chat_id, str) and ('@g.us' in chat_id)
 
     if is_group:
@@ -29,12 +32,18 @@ def webhook():
         pass
 
     try:
+        print(f"[WEBHOOK] Invocando AIBot com pergunta: '{received_message}'")
         response_message = ai_bot.invoke(received_message)
+        print(f"[WEBHOOK] Resposta gerada: {response_message[:200]}...")
+        
         # limita tamanho
         if len(response_message) > 3000:
+            print(f"[WEBHOOK] Resposta truncada de {len(response_message)} para 3000 caracteres")
             response_message = response_message[:3000] + "\n\n(Resposta truncada.)"
 
+        print(f"[WEBHOOK] Enviando mensagem para {chat_id}")
         waha.send_message(chat_id=chat_id, message=response_message)
+        print(f"[WEBHOOK] ✅ Mensagem enviada com sucesso!")
     finally:
         try:
             waha.stop_typing(chat_id=chat_id)

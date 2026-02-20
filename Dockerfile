@@ -12,6 +12,9 @@ COPY . .
 
 ENV FLASK_APP=app.py
 
+# Dar permissão de execução ao script de entrypoint
+RUN chmod +x /app/entrypoint.sh
+
 EXPOSE 5000
 
-CMD ["flask", "run", "--host=0.0.0.0", "--port=5000", "--debug"]
+CMD ["/app/entrypoint.sh"]

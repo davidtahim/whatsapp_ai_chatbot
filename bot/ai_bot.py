@@ -15,7 +15,7 @@ os.environ["GROQ_API_KEY"] = config("GROQ_API_KEY")
 class AIBot:
     def __init__(self):
         self.__chat = ChatGroq(
-            model=config("GROQ_MODEL", default="llama3-70b-8192"),
+            model=config("GROQ_MODEL", default="llama-3.1-8b-instant"),
             temperature=float(config("TEMPERATURE", default="0.3")),
             max_tokens=int(config("MAX_TOKENS", default="2048")),
         )
@@ -25,7 +25,8 @@ class AIBot:
         self.__top_k = int(config("TOP_K", default="5"))
 
         self.__embeddings = HuggingFaceEmbeddings(
-            model_name=config("EMBED_MODEL", default="sentence-transformers/all-MiniLM-L6-v2")
+            model_name=config("EMBED_MODEL", default="sentence-transformers/all-MiniLM-L6-v2"),
+            model_kwargs={'device': 'cpu'}
         )
 
         self.__db = Chroma(
@@ -36,19 +37,28 @@ class AIBot:
 
     def _retrieve_context(self, question: str) -> str:
         docs = self.__db.similarity_search(question, k=self.__top_k)
+        print(f"[AIBOT] Buscando contexto para: '{question}'")
+        print(f"[AIBOT] Documentos encontrados: {len(docs)}")
+        
         if not docs:
+            print(f"[AIBOT] ⚠️  Nenhum documento encontrado!")
             return ""
 
         blocks = []
-        for d in docs:
+        for i, d in enumerate(docs, 1):
             meta = d.metadata or {}
             src = meta.get("source", "pdf")
             page = meta.get("page", "?")
+            content_preview = d.page_content[:50].replace('\n', ' ')
+            print(f"[AIBOT]   {i}. {src} p.{page}: {content_preview}...")
             blocks.append(f"[{src} p.{page}] {d.page_content}")
 
-        return "\n\n".join(blocks)
+        context = "\n\n".join(blocks)
+        print(f"[AIBOT] Contexto total: {len(context)} caracteres")
+        return context
 
     def invoke(self, question: str) -> str:
+        print(f"\n[AIBOT] === Processando pergunta: '{question}' ===")
         context = self._retrieve_context(question)
 
         prompt = PromptTemplate(
@@ -68,4 +78,8 @@ Pergunta do aluno:
         )
 
         chain = prompt | self.__chat | StrOutputParser()
-        return chain.invoke({"pergunta": question, "contexto": context})
+        print(f"[AIBOT] Invocando LLM com Groq...")
+        response = chain.invoke({"pergunta": question, "contexto": context})
+        print(f"[AIBOT] Resposta gerada: {response[:100]}...")
+        print(f"[AIBOT] === Fim do processamento ===\n")
+        return response
