@@ -12,9 +12,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copiar requirements e gerar wheels para evitar compilação no final
 COPY requirements.txt ./
 RUN python -m pip install --upgrade pip setuptools wheel \
- && pip wheel --no-cache-dir --no-deps --wheel-dir /wheels -r requirements.txt
+ && pip wheel --no-cache-dir --no-deps --wheel-dir /wheels --extra-index-url https://download.pytorch.org/whl/cpu -r requirements.txt
 
-FROM pytorch/pytorch:2.2.0-cpu
+FROM python:3.11-slim
 ENV PYTHONUNBUFFERED=1
 WORKDIR /app
 
@@ -28,7 +28,7 @@ COPY --from=builder /wheels /wheels
 COPY requirements.txt ./
 RUN python -m pip install --upgrade pip \
  && pip install --no-cache-dir --no-index --find-links=/wheels -r requirements.txt || \
-    (echo "Fallback: instalar via PyPI" && pip install --no-cache-dir -r requirements.txt)
+    (echo "Fallback: instalar via PyPI (incluindo índice PyTorch CPU)" && pip install --no-cache-dir --extra-index-url https://download.pytorch.org/whl/cpu -r requirements.txt)
 
 # Copiar código da aplicação
 COPY . .
