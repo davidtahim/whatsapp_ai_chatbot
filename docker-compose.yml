@@ -18,16 +18,23 @@ services:
       - '3000:3000'
     env_file:
       - .env
+    volumes:
+      - waha_sessions:/app/sessions
 
   api:
     build:
       context: .
-      dockerfile: Dockerfile.api
+      dockerfile: Dockerfile
     container_name: wpp_bot_api
     ports:
       - '5000:5000'
     volumes:
       - .:/app
       - ./chroma_data:/app/chroma_data
+      - ./data/pdfs:/app/data/pdfs
+      - ./data/chroma_data:/app/chroma_data
     env_file:
       - .env
+
+volumes:
+  waha_sessions:
