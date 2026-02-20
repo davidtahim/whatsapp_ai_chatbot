@@ -4,9 +4,20 @@ services:
     image: devlikeapro/waha:latest
     container_name: wpp_bot_waha
     restart: always
+    environment:
+      - WAHA_API_KEY=${WAHA_API_KEY}
+      - WAHA_DASHBOARD_USERNAME=${WAHA_DASHBOARD_USERNAME}
+      - WAHA_DASHBOARD_PASSWORD=${WAHA_DASHBOARD_PASSWORD}
+      - WHATSAPP_SWAGGER_USERNAME=${WHATSAPP_SWAGGER_USERNAME}
+      - WHATSAPP_SWAGGER_PASSWORD=${WHATSAPP_SWAGGER_PASSWORD}
+      - WAHA_SESSION=${WAHA_SESSION}
+      - WHATSAPP_HOOK_URL=${WHATSAPP_HOOK_URL}
+      - WHATSAPP_HOOK_EVENTS=${WHATSAPP_HOOK_EVENTS}
 
     ports:
       - '3000:3000'
+    env_file:
+      - .env
 
   api:
     build:
@@ -18,3 +29,5 @@ services:
     volumes:
       - .:/app
       - ./chroma_data:/app/chroma_data
+    env_file:
+      - .env
