@@ -31,8 +31,10 @@ class Waha:
                 headers=headers,
                 timeout=10
             )
-            if response.status_code != 200:
+            if response.status_code not in [200, 201]:
                 print(f"Erro ao enviar mensagem: {response.status_code} - {response.text}")
+            else:
+                print(f"✅ Mensagem enviada com sucesso (status {response.status_code})")
         except Exception as e:
             print(f"Erro ao enviar mensagem: {e}")
 

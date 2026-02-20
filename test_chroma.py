@@ -29,7 +29,8 @@ def test_chroma():
     try:
         embeddings = HuggingFaceEmbeddings(
             model_name=config("EMBED_MODEL", default="sentence-transformers/all-MiniLM-L6-v2"),
-            model_kwargs={'device': 'cpu'}
+            model_kwargs={'device': 'cpu'},
+            encode_kwargs={'normalize_embeddings': False}
         )
         
         db = Chroma(

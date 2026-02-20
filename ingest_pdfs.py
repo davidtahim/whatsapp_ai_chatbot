@@ -36,7 +36,6 @@ def main():
         embedding_function=embeddings,
     )
     db.add_documents(chunks)
-    db.persist()
 
     print(f"✅ Indexado: páginas={len(docs)} | chunks={len(chunks)} | db={CHROMA_DIR} | collection={COLLECTION}")
 
