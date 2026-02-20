@@ -1,20 +1,35 @@
 from flask import Flask, request, jsonify
 from collections import deque
 from datetime import datetime, timedelta
+import threading
+import sys
 
-from bot.ai_bot import AIBot
 from services.waha import Waha
 
 app = Flask(__name__)
 
-# Instância global do AIBot para reutilização
-print("[APP] Inicializando AIBot globalmente...")
-try:
-    ai_bot_instance = AIBot()
-    print("[APP] ✅ AIBot global inicializado com sucesso!")
-except Exception as e:
-    print(f"[APP] ❌ Erro ao inicializar AIBot: {e}")
-    ai_bot_instance = None
+# Flag para rastrear inicialização do AIBot
+ai_bot_instance = None
+ai_bot_ready = False
+ai_bot_error = None
+
+def initialize_ai_bot():
+    """Inicializa o AIBot em thread separada para não bloquear o health check"""
+    global ai_bot_instance, ai_bot_ready, ai_bot_error
+    print("[APP] Inicializando AIBot globalmente (em thread separada)...")
+    try:
+        from bot.ai_bot import AIBot
+        ai_bot_instance = AIBot()
+        ai_bot_ready = True
+        print("[APP] ✅ AIBot global inicializado com sucesso!")
+    except Exception as e:
+        ai_bot_error = str(e)
+        print(f"[APP] ❌ Erro ao inicializar AIBot: {e}", file=sys.stderr)
+        ai_bot_ready = True  # Marca como pronto mesmo com erro (evita ficar esperando)
+
+# Inicializar AIBot em background
+ai_bot_thread = threading.Thread(target=initialize_ai_bot, daemon=True)
+ai_bot_thread.start()
 
 # Cache para evitar processar a mesma mensagem duas vezes
 processed_messages = {}  # {message_id: timestamp}
@@ -70,7 +85,11 @@ def webhook():
 
     if ai_bot_instance is None:
         print(f"[WEBHOOK] ❌ AIBot não foi inicializado corretamente!")
-        return jsonify({'status': 'error', 'message': 'Bot não inicializado'}), 500
+        if ai_bot_error:
+            return jsonify({'status': 'error', 'message': f'Bot não inicializado: {ai_bot_error}'}), 500
+        else:
+            # Ainda está inicializando em background
+            return jsonify({'status': 'error', 'message': 'Bot ainda está inicializando, tente novamente em alguns segundos'}), 503
 
     waha = Waha()
 
@@ -111,7 +130,14 @@ def webhook():
 
 @app.route("/health", methods=["GET"])
 def health():
-    return jsonify({"status": "ok"}), 200
+    """Health check rápido - responde imediatamente sem esperar AIBot"""
+    return jsonify({"status": "ok", "ai_bot_ready": ai_bot_ready}), 200
+
+
+@app.route("/", methods=["GET"])
+def root():
+    """Root endpoint para verificação básica"""
+    return jsonify({"message": "WhatsApp AI Chatbot is running", "health": "ok"}), 200
 
 
 if __name__ == '__main__':
