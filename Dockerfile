@@ -20,7 +20,7 @@ WORKDIR /app
 
 # Dependências de sistema mínimas em runtime
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libffi7 \
+    libffi-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Copiar wheels e instalar sem compilar
