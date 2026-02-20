@@ -3,6 +3,7 @@ from collections import deque
 from datetime import datetime, timedelta
 import threading
 import sys
+import time
 
 from services.waha import Waha
 
@@ -12,6 +13,7 @@ app = Flask(__name__)
 ai_bot_instance = None
 ai_bot_ready = False
 ai_bot_error = None
+app_start_time = time.time()
 
 def initialize_ai_bot():
     """Inicializa o AIBot em thread separada para não bloquear o health check"""
@@ -131,7 +133,8 @@ def webhook():
 @app.route("/health", methods=["GET"])
 def health():
     """Health check rápido - responde imediatamente sem esperar AIBot"""
-    return jsonify({"status": "ok", "ai_bot_ready": ai_bot_ready}), 200
+    uptime = time.time() - app_start_time
+    return jsonify({"status": "ok", "ai_bot_ready": ai_bot_ready, "uptime_seconds": round(uptime, 2)}), 200
 
 
 @app.route("/", methods=["GET"])

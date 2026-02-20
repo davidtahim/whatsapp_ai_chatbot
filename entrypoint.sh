@@ -30,5 +30,6 @@ if pdfs_dir.exists() and any(pdfs_dir.iterdir()):
 else:
     print("⚠️  Nenhum PDF encontrado em /app/data/pdfs")
 
-print("🌐 Iniciando Flask...")
-os.execvp(sys.executable, [sys.executable, "-m", "flask", "run", "--host=0.0.0.0", "--port=5000"])
+print("🌐 Iniciando Gunicorn (WSGI server)...")
+os.execvp(sys.executable, [sys.executable, "-m", "gunicorn", "--bind", "0.0.0.0:5000", "--workers", "4", "--timeout", "120", "--access-logfile", "-", "app:app"])
+
